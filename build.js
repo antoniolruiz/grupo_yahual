@@ -116,7 +116,8 @@ function makeBaseHtml({ title, body, extraHead = '' }) {
       <div class="container">
         <a class="brand" href="${BASE_PATH}">Casa Yahua</a>
         <nav class="nav">
-          <a href="${BASE_PATH}">Home</a>
+          <a href="${BASE_PATH}">Suites</a>
+          <a href="#contact">Contact</a>
         </nav>
       </div>
     </header>
@@ -141,6 +142,7 @@ function makeIndexHtml(suites) {
         <div class="card-image" style="background-image:url('${cover}')" aria-hidden="true"></div>
         <div class="card-body">
           <h2 class="card-title">${htmlEscape(suite.name)}</h2>
+          <div class="card-sub">View details →</div>
         </div>
       </a>
     `;
@@ -148,10 +150,25 @@ function makeIndexHtml(suites) {
 
   const body = `
     <section class="hero">
-      <h1>Welcome to Casa Yahua</h1>
-      <p>Explore our suites and check availability.</p>
+      <h1>Stay at Casa Yahua</h1>
+      <p>Thoughtfully designed suites in a calm, convenient location. Simple booking, clear availability.</p>
+      <div class="search-bar">
+        <div class="field">
+          <label>Check-in</label>
+          <input type="date" id="search-check-in" />
+        </div>
+        <div class="field">
+          <label>Check-out</label>
+          <input type="date" id="search-check-out" />
+        </div>
+        <div class="field">
+          <label>Guests</label>
+          <input type="number" id="search-guests" min="1" value="2" />
+        </div>
+        <button class="btn-primary" id="search-button" type="button">Search suites</button>
+      </div>
     </section>
-    <section class="grid">
+    <section id="suites" class="grid">
       ${cards}
     </section>
   `;
@@ -165,20 +182,61 @@ function makeListingHtml(suite) {
     return `<a href="${src}" target="_blank" rel="noopener"><img loading="lazy" src="${src}" alt="${htmlEscape(suite.name)} photo" /></a>`;
   }).join('\n');
 
+  const amenities = [
+    'Fast Wi‑Fi',
+    'Air conditioning',
+    'Fully equipped kitchen',
+    'Comfortable queen bed',
+    'Private bathroom',
+    'Workspace',
+  ];
+
+  const bookingAside = `
+    <aside class="booking-card" data-airbnb-id="${suite.airbnbId || ''}">
+      <div class="price-line"><span class="price">Book on Airbnb</span></div>
+      <form id="booking-form" novalidate>
+        <div class="row">
+          <label>Check‑in<input type="date" name="check_in" required></label>
+          <label>Check‑out<input type="date" name="check_out" required></label>
+        </div>
+        <label>Guests<input type="number" name="adults" min="1" value="2"></label>
+        <button type="submit" class="btn-primary" ${suite.airbnbId ? '' : 'disabled'}>${suite.airbnbId ? 'Check availability' : 'Open Airbnb'}</button>
+        ${suite.airbnbId ? '' : '<p class="muted">Listing link unavailable. You can still browse photos and availability.</p>'}
+      </form>
+      <p class="secure-note">Secure booking via Airbnb</p>
+    </aside>`;
+
   const body = `
     <a class="back" href="${BASE_PATH}">← Back to all suites</a>
     <h1>${htmlEscape(suite.name)}</h1>
-    <section>
-      <h2>Gallery</h2>
-      <div class="gallery">${gallery}</div>
-    </section>
-    <section>
-      <h2>Availability</h2>
-      <div id="availability" data-slug="${suite.slug}"></div>
-      <div class="ical-hint">
-        <p>To enable the calendar, add the Airbnb iCal URL for this listing to <code>data/config.json</code> under the key <code>${suite.slug}</code>, then run <code>npm run sync-calendars</code>.</p>
+    <div class="listing-layout">
+      <div class="listing-main">
+        <section>
+          <h2>Gallery</h2>
+          <div class="gallery">${gallery}</div>
+        </section>
+        <section>
+          <h2>Availability</h2>
+          <div id="availability" data-slug="${suite.slug}"></div>
+          <div class="ical-hint">
+            <p>To enable the calendar, add the Airbnb iCal URL for this listing to <code>data/config.json</code> under the key <code>${suite.slug}</code>, then run <code>npm run sync-calendars</code>.</p>
+          </div>
+        </section>
+        <section class="amenities">
+          <h2>Amenities</h2>
+          <ul class="amenities-list">${amenities.map(a => `<li>${a}</li>`).join('')}</ul>
+        </section>
+        <section class="house-rules">
+          <h2>House rules</h2>
+          <ul class="rules-list">
+            <li>No smoking</li>
+            <li>No parties or events</li>
+            <li>Quiet hours after 10pm</li>
+          </ul>
+        </section>
       </div>
-    </section>
+      ${bookingAside}
+    </div>
   `;
 
   return makeBaseHtml({ title: `${suite.name} — Casa Yahua`, body });
@@ -246,12 +304,36 @@ async function ensureEmptyAvailability(suites) {
   }
 }
 
+async function readConfig() {
+  if (!fs.existsSync(CONFIG_PATH)) return {};
+  try {
+    return JSON.parse(await fsp.readFile(CONFIG_PATH, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+function getAirbnbIdFromIcalUrl(icalUrl) {
+  if (!icalUrl) return null;
+  const match = /calendar\/ical\/(\d+)\.ics/i.exec(icalUrl);
+  return match ? match[1] : null;
+}
+
+async function enrichSuitesWithConfig(suites) {
+  const cfg = await readConfig();
+  for (const suite of suites) {
+    const icalUrl = cfg[suite.slug] ? cfg[suite.slug].icalUrl : '';
+    suite.airbnbId = getAirbnbIdFromIcalUrl(icalUrl);
+  }
+}
+
 async function main() {
   await ensureDir(PUBLIC_DIR);
   const suites = await listSuiteDirectories();
   if (suites.length === 0) {
     console.warn('No suite directories found. Create folders like "Casa Yahua - Suite X" with images.');
   }
+  await enrichSuitesWithConfig(suites);
   await copyAssets();
   await copySuiteImages(suites);
   await writeIndexPage(suites);

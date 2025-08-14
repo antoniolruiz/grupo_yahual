@@ -1,4 +1,20 @@
 (function() {
+  function qs(sel, parent) { return (parent || document).querySelector(sel); }
+  function qsa(sel, parent) { return Array.from((parent || document).querySelectorAll(sel)); }
+
+  function addDays(date, n) {
+    const d = new Date(date);
+    d.setDate(d.getDate() + n);
+    return d;
+  }
+
+  function fmtYmd(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
   function fmtYmd(date) {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -13,7 +29,9 @@
   }
 
   function renderCalendar(container, bookedDates, monthsToShow = 6) {
-    const todayYmd = fmtYmd(new Date());
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const todayYmd = fmtYmd(today);
 
     const bookedSet = new Set(bookedDates);
     const monthsWrapper = document.createElement('div');
@@ -57,11 +75,13 @@
 
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month, day);
+        date.setHours(0,0,0,0);
         const ymd = fmtYmd(date);
         const el = document.createElement('div');
         el.className = 'day';
         if (bookedSet.has(ymd)) el.classList.add('booked');
         if (ymd === todayYmd) el.classList.add('today');
+        if (date < today) el.classList.add('past');
         const num = document.createElement('div');
         num.className = 'num';
         num.textContent = String(day);
@@ -107,10 +127,61 @@
     }
   }
 
+  function initSearchBar() {
+    const btn = qs('#search-button');
+    if (!btn) return;
+    const inEl = qs('#search-check-in');
+    const outEl = qs('#search-check-out');
+    const guestsEl = qs('#search-guests');
+    // Defaults
+    const today = new Date();
+    const tomorrow = addDays(today, 1);
+    if (inEl && !inEl.value) inEl.value = fmtYmd(today);
+    if (outEl && !outEl.value) outEl.value = fmtYmd(tomorrow);
+    btn.addEventListener('click', () => {
+      const checkIn = inEl.value;
+      const checkOut = outEl.value;
+      const guests = guestsEl.value || '2';
+      // Scroll to suites section
+      const grid = qs('#suites');
+      if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+      // Optionally filter cards in future; for now, no-op
+    });
+  }
+
+  function initBookingForm() {
+    const form = qs('#booking-form');
+    if (!form) return;
+    const aside = form.closest('.booking-card');
+    const airbnbId = aside ? aside.getAttribute('data-airbnb-id') : '';
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const data = new FormData(form);
+      const ci = data.get('check_in');
+      const co = data.get('check_out');
+      const adults = data.get('adults') || '2';
+      if (!airbnbId) {
+        window.alert('Opening Airbnb listing.');
+        return;
+      }
+      const url = new URL(`https://www.airbnb.com/rooms/${airbnbId}`);
+      if (ci) url.searchParams.set('check_in', ci);
+      if (co) url.searchParams.set('check_out', co);
+      if (adults) url.searchParams.set('adults', String(adults));
+      window.open(url.toString(), '_blank', 'noopener');
+    });
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAvailability);
+    document.addEventListener('DOMContentLoaded', () => {
+      initAvailability();
+      initSearchBar();
+      initBookingForm();
+    });
   } else {
     initAvailability();
+    initSearchBar();
+    initBookingForm();
   }
 })();
 
