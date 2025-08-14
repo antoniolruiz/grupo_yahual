@@ -1,0 +1,22 @@
+{
+  "name": "casa-yahua-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static site for Casa Yahua suites with galleries and iCal availability placeholder",
+  "scripts": {
+    "build": "node build.js",
+    "sync-calendars": "node sync-ical.js",
+    "start": "npx serve public -l 5173"
+  },
+  "keywords": [
+    "hotel",
+    "airbnb",
+    "ical",
+    "static-site"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}
+
