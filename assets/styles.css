@@ -34,7 +34,9 @@ body {
   justify-content: space-between;
   padding: 14px 0;
 }
-.brand { color: var(--brand); text-decoration: none; font-weight: 700; letter-spacing: 0.4px; font-family: 'Playfair Display', serif; font-size: 1.2rem; }
+.brand { color: var(--brand); text-decoration: none; font-weight: 700; letter-spacing: 0.4px; font-family: 'Playfair Display', serif; font-size: 1.2rem; display: inline-flex; align-items: center; gap: 10px; }
+.brand-logo { height: 28px; width: auto; display: inline-block; }
+.brand-text { display: inline-block; }
 .nav a { color: var(--text); text-decoration: none; margin-left: 18px; }
 .nav a:hover { color: var(--text); }
 .btn-nav { margin-left: 18px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 999px; color: var(--panel); background: var(--text); }
@@ -111,9 +113,12 @@ body {
 .section { padding: 44px 0 16px; }
 .section-title { margin: 0 0 12px; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 2rem; }
 .amenities-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px 14px; padding-left: 18px; }
+.amenity-item { display: inline-flex; align-items: center; gap: 8px; }
+.amenity-icon { font-size: 1rem; }
 
 /* Map */
-.map-embed { position: relative; width: 100%; padding-top: 56.25%; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); background: var(--panel); }
+.map-embed { position: relative; width: 100%; padding-top: 56.25%; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); background: var(--panel); margin-bottom: 10px; }
+.btn-secondary { display: inline-block; border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 999px; text-decoration: none; }
 .map-embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
 
 /* Calendar */

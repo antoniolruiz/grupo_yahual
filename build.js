@@ -96,7 +96,7 @@ function htmlEscape(text) {
   return text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-function makeBaseHtml({ title, body, extraHead = '' }) {
+function makeBaseHtml({ title, body, extraHead = '', siteLogoUrl = '' }) {
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -114,7 +114,10 @@ function makeBaseHtml({ title, body, extraHead = '' }) {
   <body>
     <header class="site-header">
       <div class="container">
-        <a class="brand" href="${BASE_PATH}">Casa Yahua</a>
+        <a class="brand" href="${BASE_PATH}" aria-label="Casa Yahua">
+          ${siteLogoUrl ? `<img class=\"brand-logo\" src=\"${siteLogoUrl}\" alt=\"Casa Yahua logo\" />` : ''}
+          <span class="brand-text">Casa Yahua</span>
+        </a>
         <button class="menu-toggle" id="menu-toggle" aria-label="Toggle navigation">☰</button>
         <nav class="nav" id="site-nav">
           <a href="${BASE_PATH}#about">About</a>
@@ -173,7 +176,7 @@ async function resolveHeroImageUrl(suites) {
   return getHeroImageFallbackFromSuites(suites);
 }
 
-function makeIndexHtml(suites, heroUrl) {
+function makeIndexHtml(suites, heroUrl, siteLogoUrl) {
   const heroImage = heroUrl || getHeroImageFallbackFromSuites(suites);
 
   const rooms = suites.map(suite => {
@@ -196,7 +199,23 @@ function makeIndexHtml(suites, heroUrl) {
     'Comfortable bedding',
     'Private bathrooms',
     'Quiet neighborhood',
+    'Pool',
+    'Terrace',
   ];
+
+  function amenityIcon(name) {
+    const map = {
+      'Fast Wi‑Fi': '📶',
+      'Air conditioning': '❄️',
+      'Kitchen access': '🍳',
+      'Comfortable bedding': '🛏️',
+      'Private bathrooms': '🛁',
+      'Quiet neighborhood': '🌿',
+      'Pool': '🏊',
+      'Terrace': '🌅',
+    };
+    return map[name] || '•';
+  }
 
   const galleryItems = suites.flatMap(suite => suite.images.slice(0, 2).map(img => `${BASE_PATH}images/${suite.slug}/${encodeURIComponent(img.fileName)}`)).slice(0, 12);
 
@@ -220,7 +239,7 @@ function makeIndexHtml(suites, heroUrl) {
 
     <section id="amenities" class="section">
       <h2 class="section-title">Amenities</h2>
-      <ul class="amenities-grid">${amenities.map(a => `<li>${a}</li>`).join('')}</ul>
+      <ul class="amenities-grid">${amenities.map(a => `<li class=\"amenity-item\"><span class=\"amenity-icon\" aria-hidden=\"true\">${amenityIcon(a)}</span><span>${a}</span></li>`).join('')}</ul>
     </section>
 
     <section id="rooms" class="section">
@@ -238,6 +257,7 @@ function makeIndexHtml(suites, heroUrl) {
       <div class="map-embed">
         <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3838.2627246206334!2d-97.04870772463873!3d15.84278314545982!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x85b8f900465b9627%3A0x7a7a7a854fb822d1!2sCasa%20Yahual!5e0!3m2!1sen!2sus!4v1755530799685!5m2!1sen!2sus" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
       </div>
+      <p><a class="btn-secondary" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=15.8427831%2C-97.0487077">Get directions</a></p>
       <p>Located in a peaceful area with easy access to local cafes, markets, and cultural spots. Ride‑share and taxi services are readily available.</p>
     </section>
 
@@ -247,10 +267,10 @@ function makeIndexHtml(suites, heroUrl) {
     </section>
   `;
 
-  return makeBaseHtml({ title: 'Casa Yahua — Suites', body });
+  return makeBaseHtml({ title: 'Casa Yahua — Suites', body, siteLogoUrl });
 }
 
-function makeListingHtml(suite) {
+function makeListingHtml(suite, siteLogoUrl) {
   const gallery = suite.images.map(img => {
     const src = `${BASE_PATH}images/${suite.slug}/${encodeURIComponent(img.fileName)}`;
     return `<a href="${src}" target="_blank" rel="noopener"><img loading="lazy" src="${src}" alt="${htmlEscape(suite.name)} photo" /></a>`;
@@ -263,7 +283,23 @@ function makeListingHtml(suite) {
     'Comfortable queen bed',
     'Private bathroom',
     'Workspace',
+    'Pool',
+    'Terrace',
   ];
+
+  function amenityIcon(name) {
+    const map = {
+      'Fast Wi‑Fi': '📶',
+      'Air conditioning': '❄️',
+      'Fully equipped kitchen': '🍳',
+      'Comfortable queen bed': '🛏️',
+      'Private bathroom': '🛁',
+      'Workspace': '💻',
+      'Pool': '🏊',
+      'Terrace': '🌅',
+    };
+    return map[name] || '•';
+  }
 
   const bookingAside = `
     <aside class="booking-card" data-airbnb-id="${suite.airbnbId || ''}">
@@ -298,7 +334,7 @@ function makeListingHtml(suite) {
         </section>
         <section class="amenities">
           <h2>Amenities</h2>
-          <ul class="amenities-list">${amenities.map(a => `<li>${a}</li>`).join('')}</ul>
+          <ul class="amenities-list">${amenities.map(a => `<li class=\"amenity-item\"><span class=\"amenity-icon\" aria-hidden=\"true\">${amenityIcon(a)}</span><span>${a}</span></li>`).join('')}</ul>
         </section>
         <section class="house-rules">
           <h2>House rules</h2>
@@ -313,7 +349,7 @@ function makeListingHtml(suite) {
     </div>
   `;
 
-  return makeBaseHtml({ title: `${suite.name} — Casa Yahua`, body });
+  return makeBaseHtml({ title: `${suite.name} — Casa Yahua`, body, siteLogoUrl });
 }
 
 async function writeFile(fp, content) {
@@ -321,14 +357,14 @@ async function writeFile(fp, content) {
   await fsp.writeFile(fp, content, 'utf8');
 }
 
-async function writeIndexPage(suites, heroUrl) {
-  const html = makeIndexHtml(suites, heroUrl);
+async function writeIndexPage(suites, heroUrl, siteLogoUrl) {
+  const html = makeIndexHtml(suites, heroUrl, siteLogoUrl);
   await writeFile(path.join(PUBLIC_DIR, 'index.html'), html);
 }
 
-async function writeListingPages(suites) {
+async function writeListingPages(suites, siteLogoUrl) {
   for (const suite of suites) {
-    const html = makeListingHtml(suite);
+    const html = makeListingHtml(suite, siteLogoUrl);
     const dest = path.join(PUBLIC_DIR, 'listings', suite.slug, 'index.html');
     await writeFile(dest, html);
   }
@@ -401,6 +437,20 @@ async function enrichSuitesWithConfig(suites) {
   }
 }
 
+async function resolveLogoAsset() {
+  const candidates = ['logo.svg','logo.png','logo.jpg','logo.jpeg','logo.webp'];
+  await ensureDir(ASSETS_DEST_DIR);
+  for (const name of candidates) {
+    const src = path.join(ASSETS_SRC_DIR, name);
+    if (fs.existsSync(src)) {
+      const dest = path.join(ASSETS_DEST_DIR, name);
+      await fsp.copyFile(src, dest);
+      return `${BASE_PATH}assets/${name}`;
+    }
+  }
+  return '';
+}
+
 async function main() {
   await ensureDir(PUBLIC_DIR);
   const suites = await listSuiteDirectories();
@@ -411,8 +461,9 @@ async function main() {
   await copyAssets();
   await copySuiteImages(suites);
   const heroUrl = await resolveHeroImageUrl(suites);
-  await writeIndexPage(suites, heroUrl);
-  await writeListingPages(suites);
+  const logoUrl = await resolveLogoAsset();
+  await writeIndexPage(suites, heroUrl, logoUrl);
+  await writeListingPages(suites, logoUrl);
   await write404Redirect();
   await ensureConfig(suites);
   await ensureEmptyAvailability(suites);
