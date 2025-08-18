@@ -140,7 +140,15 @@ function makeBaseHtml({ title, body, extraHead = '' }) {
 </html>`;
 }
 
-function getHeroImage(suites) {
+function getHeroImageFallbackFromSuites(suites) {
+  // Prefer a terrace-style image if present
+  for (const suite of suites) {
+    const terrace = suite.images.find(img => /terraza|terrace/i.test(img.fileName));
+    if (terrace) {
+      return `${BASE_PATH}images/${suite.slug}/${encodeURIComponent(terrace.fileName)}`;
+    }
+  }
+  // Otherwise first available image
   for (const suite of suites) {
     if (suite.images && suite.images.length > 0) {
       return `${BASE_PATH}images/${suite.slug}/${encodeURIComponent(suite.images[0].fileName)}`;
@@ -149,8 +157,24 @@ function getHeroImage(suites) {
   return '';
 }
 
-function makeIndexHtml(suites) {
-  const heroImage = getHeroImage(suites);
+async function resolveHeroImageUrl(suites) {
+  // 1) If assets/hero.* exists, copy it to public/images/hero.* and use it
+  const heroCandidates = ['hero.jpg','hero.jpeg','hero.png','hero.webp','hero.avif'];
+  for (const name of heroCandidates) {
+    const src = path.join(ASSETS_SRC_DIR, name);
+    if (fs.existsSync(src)) {
+      const dest = path.join(IMAGES_DEST_DIR, name);
+      await ensureDir(IMAGES_DEST_DIR);
+      await fsp.copyFile(src, dest);
+      return `${BASE_PATH}images/${encodeURIComponent(name)}`;
+    }
+  }
+  // 2) Try to find a terrace image among suites
+  return getHeroImageFallbackFromSuites(suites);
+}
+
+function makeIndexHtml(suites, heroUrl) {
+  const heroImage = heroUrl || getHeroImageFallbackFromSuites(suites);
 
   const rooms = suites.map(suite => {
     const cover = `${BASE_PATH}images/${suite.slug}/${encodeURIComponent(suite.images[0].fileName)}`;
@@ -294,8 +318,8 @@ async function writeFile(fp, content) {
   await fsp.writeFile(fp, content, 'utf8');
 }
 
-async function writeIndexPage(suites) {
-  const html = makeIndexHtml(suites);
+async function writeIndexPage(suites, heroUrl) {
+  const html = makeIndexHtml(suites, heroUrl);
   await writeFile(path.join(PUBLIC_DIR, 'index.html'), html);
 }
 
@@ -383,7 +407,8 @@ async function main() {
   await enrichSuitesWithConfig(suites);
   await copyAssets();
   await copySuiteImages(suites);
-  await writeIndexPage(suites);
+  const heroUrl = await resolveHeroImageUrl(suites);
+  await writeIndexPage(suites, heroUrl);
   await writeListingPages(suites);
   await write404Redirect();
   await ensureConfig(suites);
