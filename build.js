@@ -107,7 +107,7 @@ function makeBaseHtml({ title, body, extraHead = '' }) {
     <title>${htmlEscape(title)}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="${BASE_PATH}assets/styles.css" />
     ${extraHead}
   </head>
@@ -115,9 +115,15 @@ function makeBaseHtml({ title, body, extraHead = '' }) {
     <header class="site-header">
       <div class="container">
         <a class="brand" href="${BASE_PATH}">Casa Yahua</a>
-        <nav class="nav">
-          <a href="${BASE_PATH}">Suites</a>
-          <a href="#contact">Contact</a>
+        <button class="menu-toggle" id="menu-toggle" aria-label="Toggle navigation">☰</button>
+        <nav class="nav" id="site-nav">
+          <a href="${BASE_PATH}#about">About</a>
+          <a href="${BASE_PATH}#amenities">Amenities</a>
+          <a href="${BASE_PATH}#rooms">Rooms & Rates</a>
+          <a href="${BASE_PATH}#gallery">Gallery</a>
+          <a href="${BASE_PATH}#visit">Visit</a>
+          <a href="${BASE_PATH}#contact">Contact</a>
+          <a class="btn-nav" href="${BASE_PATH}#rooms">Book a Room</a>
         </nav>
       </div>
     </header>
@@ -134,42 +140,83 @@ function makeBaseHtml({ title, body, extraHead = '' }) {
 </html>`;
 }
 
+function getHeroImage(suites) {
+  for (const suite of suites) {
+    if (suite.images && suite.images.length > 0) {
+      return `${BASE_PATH}images/${suite.slug}/${encodeURIComponent(suite.images[0].fileName)}`;
+    }
+  }
+  return '';
+}
+
 function makeIndexHtml(suites) {
-  const cards = suites.map(suite => {
+  const heroImage = getHeroImage(suites);
+
+  const rooms = suites.map(suite => {
     const cover = `${BASE_PATH}images/${suite.slug}/${encodeURIComponent(suite.images[0].fileName)}`;
     return `
-      <a class="card" href="${BASE_PATH}listings/${suite.slug}/">
-        <div class="card-image" style="background-image:url('${cover}')" aria-hidden="true"></div>
-        <div class="card-body">
-          <h2 class="card-title">${htmlEscape(suite.name)}</h2>
-          <div class="card-sub">View details →</div>
+      <a class="room-card" href="${BASE_PATH}listings/${suite.slug}/">
+        <div class="room-card__image" style="background-image:url('${cover}')" aria-hidden="true"></div>
+        <div class="room-card__body">
+          <h3 class="room-card__title">${htmlEscape(suite.name)}</h3>
+          <div class="room-card__cta">View room →</div>
         </div>
       </a>
     `;
   }).join('\n');
 
+  const amenities = [
+    'Fast Wi‑Fi',
+    'Air conditioning',
+    'Kitchen access',
+    'Comfortable bedding',
+    'Private bathrooms',
+    'Quiet neighborhood',
+  ];
+
+  const galleryItems = suites.flatMap(suite => suite.images.slice(0, 2).map(img => `${BASE_PATH}images/${suite.slug}/${encodeURIComponent(img.fileName)}`)).slice(0, 12);
+
+  const gallery = galleryItems.map(src => `<a href="${src}" target="_blank" rel="noopener"><img loading="lazy" src="${src}" alt="Casa Yahua gallery photo" /></a>`).join('\n');
+
   const body = `
-    <section class="hero">
-      <h1>Stay at Casa Yahua</h1>
-      <p>Thoughtfully designed suites in a calm, convenient location. Simple booking, clear availability.</p>
-      <div class="search-bar">
-        <div class="field">
-          <label>Check-in</label>
-          <input type="date" id="search-check-in" />
-        </div>
-        <div class="field">
-          <label>Check-out</label>
-          <input type="date" id="search-check-out" />
-        </div>
-        <div class="field">
-          <label>Guests</label>
-          <input type="number" id="search-guests" min="1" value="2" />
-        </div>
-        <button class="btn-primary" id="search-button" type="button">Search suites</button>
+    <section class="hero hero--image" id="home">
+      <div class="hero-image" style="background-image:url('${heroImage}')"></div>
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <h1>Casa Yahua</h1>
+        <p>A rustic retreat with thoughtfully designed suites. Relax, explore, and feel at home.</p>
+        <a href="#rooms" class="btn-primary">Book a Room</a>
       </div>
     </section>
-    <section id="suites" class="grid">
-      ${cards}
+
+    <section id="about" class="section">
+      <h2 class="section-title">About</h2>
+      <p>Casa Yahua offers a collection of comfortable suites with a focus on calm, clarity, and convenience. Each space is carefully arranged to help you unwind after a day of discovery.</p>
+    </section>
+
+    <section id="amenities" class="section">
+      <h2 class="section-title">Amenities</h2>
+      <ul class="amenities-grid">${amenities.map(a => `<li>${a}</li>`).join('')}</ul>
+    </section>
+
+    <section id="rooms" class="section">
+      <h2 class="section-title">Rooms & Rates</h2>
+      <div class="rooms-grid">${rooms}</div>
+    </section>
+
+    <section id="gallery" class="section">
+      <h2 class="section-title">Gallery</h2>
+      <div class="gallery-grid">${gallery}</div>
+    </section>
+
+    <section id="visit" class="section">
+      <h2 class="section-title">Visit</h2>
+      <p>Located in a peaceful area with easy access to local cafes, markets, and cultural spots. Ride‑share and taxi services are readily available.</p>
+    </section>
+
+    <section id="contact" class="section">
+      <h2 class="section-title">Contact</h2>
+      <p>Email: <a href="mailto:contact@casayahua.com">contact@casayahua.com</a></p>
     </section>
   `;
 

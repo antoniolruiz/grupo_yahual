@@ -149,6 +149,18 @@
     });
   }
 
+  function initMobileMenu() {
+    const toggle = document.getElementById('menu-toggle');
+    const nav = document.getElementById('site-nav');
+    if (!toggle || !nav) return;
+    toggle.addEventListener('click', () => {
+      nav.classList.toggle('open');
+    });
+    document.addEventListener('click', (e) => {
+      if (!nav.contains(e.target) && e.target !== toggle) nav.classList.remove('open');
+    });
+  }
+
   function initBookingForm() {
     const form = qs('#booking-form');
     if (!form) return;
@@ -176,11 +188,13 @@
     document.addEventListener('DOMContentLoaded', () => {
       initAvailability();
       initSearchBar();
+      initMobileMenu();
       initBookingForm();
     });
   } else {
     initAvailability();
     initSearchBar();
+    initMobileMenu();
     initBookingForm();
   }
 })();
