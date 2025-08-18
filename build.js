@@ -235,6 +235,9 @@ function makeIndexHtml(suites, heroUrl) {
 
     <section id="visit" class="section">
       <h2 class="section-title">Visit</h2>
+      <div class="map-embed">
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3838.2627246206334!2d-97.04870772463873!3d15.84278314545982!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x85b8f900465b9627%3A0x7a7a7a854fb822d1!2sCasa%20Yahual!5e0!3m2!1sen!2sus!4v1755530799685!5m2!1sen!2sus" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
       <p>Located in a peaceful area with easy access to local cafes, markets, and cultural spots. Ride‑share and taxi services are readily available.</p>
     </section>
 
